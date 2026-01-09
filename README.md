@@ -5,9 +5,9 @@
 ### WeewooCAD: Overview
 WeewooCAd is a personal project of mine to have a CAD like SonoranCAD or SauceCAD withot paying like 10 20 bucks a month to keep the    server running even if it no one is using it and having all of my own personally liked features.
 ### WeewooCAD: functions
-fkjnweijfn
+well none JET..
 ### WeewooCAD: get it running
-iawubdihawbdu
+you Cant yet 😁
 
 ## The creator(s) of WeewooCAD
 
