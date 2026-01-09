@@ -48,6 +48,14 @@ main.container {
   padding: 3rem 2rem;
 }
 
+.label{
+font-family: 'Indie Flower', cursive;
+ display: block;
+ margin-bottom: 0.5rem;
+ font-weight: 600;
+ color: #333;
+}
+
 /* Footer */
 .footer {
   background: rgba(0, 0, 0, 0.3);
