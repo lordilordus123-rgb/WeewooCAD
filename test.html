@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeewooCAD – Voice Server</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#07070b;
+      --bg1:#0b0c12;
+      --ink:#e9e7ff;
+      --muted:#b9b6d9;
+      --dim:#8e8aa9;
+
+      --acid:#c7ff4a;     /* sharp accent */
+      --hot:#ff3dbe;      /* secondary accent */
+      --cyan:#27d7ff;     /* tertiary */
+      --amber:#ffb74a;
+
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.09);
+      --stroke: rgba(255,255,255,.12);
+      --stroke2: rgba(199,255,74,.25);
+      --shadow: 0 18px 60px rgba(0,0,0,.55);
+
+      --radius: 18px;
+      --radius2: 26px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family:"Space Grotesk", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(1200px 800px at 80% 10%, rgba(255,61,190,.18), transparent 55%),
+        radial-gradient(900px 650px at 20% 35%, rgba(39,215,255,.16), transparent 55%),
+        radial-gradient(1000px 900px at 55% 90%, rgba(199,255,74,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    /* subtle noise overlay */
+    body:before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode:overlay;
+      opacity:.12;
+    }
+
+    a{ color:inherit; }
+    .wrap{
+      width:min(1160px, 92vw);
+      margin:0 auto;
+      padding:22px 0 48px;
+    }
+
+    header{
+      position:sticky;
+      top:0;
+      z-index:40;
+      backdrop-filter: blur(14px);
+      background: linear-gradient(180deg, rgba(7,7,11,.85), rgba(7,7,11,.35));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      padding:14px 0;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      min-width: 220px;
+    }
+    .logo{
+      width:40px; height:40px;
+      border-radius:14px;
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.35), transparent 55%),
+        conic-gradient(from 210deg, var(--acid), var(--cyan), var(--hot), var(--acid));
+      box-shadow: 0 10px 30px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.16);
+      position:relative;
+      overflow:hidden;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:-40%;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.2), transparent 55%);
+      transform: rotate(18deg);
+    }
+    .brand h1{
+      margin:0;
+      font-family:"Fraunces", serif;
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size: clamp(18px, 2.4vw, 22px);
+      line-height:1;
+    }
+    .brand p{
+      margin:2px 0 0;
+      color:var(--dim);
+      font-size:12px;
+      letter-spacing:.2px;
+    }
+
+    .statusPill{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--acid);
+      box-shadow: 0 0 0 5px rgba(199,255,74,.12), 0 0 22px rgba(199,255,74,.45);
+    }
+    .statusPill strong{
+      font-weight:700;
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+    .statusPill span{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    main{
+      padding: 22px 0 0;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      align-items:stretch;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 980px){
+      .hero{ grid-template-columns: 1fr; }
+      .brand{ min-width: unset; }
+    }
+
+    .panel{
+      border-radius: var(--radius2);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .panel:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(600px 260px at 20% 15%, rgba(199,255,74,.16), transparent 60%),
+        radial-gradient(520px 320px at 85% 35%, rgba(255,61,190,.14), transparent 62%),
+        radial-gradient(640px 420px at 55% 110%, rgba(39,215,255,.12), transparent 60%);
+      pointer-events:none;
+    }
+
+    .panelInner{
+      position:relative;
+      padding: 22px;
+    }
+
+    .headline{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding: 2px 0 4px;
+    }
+    .headline h2{
+      margin:0;
+      font-family:"Fraunces", serif;
+      font-weight:800;
+      font-size: clamp(30px, 4.5vw, 48px);
+      line-height:1.02;
+      letter-spacing: .2px;
+    }
+    .headline h2 .accent{
+      color: var(--acid);
+      text-shadow: 0 0 28px rgba(199,255,74,.25);
+    }
+    .headline p{
+      margin:0;
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top: 18px;
+    }
+    @media (max-width: 680px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border-radius: var(--radius);
+      background: rgba(10,10,16,.46);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 12px 40px rgba(0,0,0,.38);
+      overflow:hidden;
+      position:relative;
+    }
+    .cardHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), transparent);
+    }
+    .cardHeader h3{
+      margin:0;
+      font-size: 13px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color: rgba(233,231,255,.92);
+    }
+    .badge{
+      font-size:12px;
+      color: rgba(7,7,11,.92);
+      background: var(--acid);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing:.05em;
+      box-shadow: 0 8px 26px rgba(199,255,74,.22);
+    }
+
+    .cardBody{
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    label{
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color: rgba(233,231,255,.75);
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:8px;
+    }
+    .row2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 520px){
+      .row2{ grid-template-columns: 1fr; }
+    }
+
+    input[type="text"], select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--ink);
+      outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    input[type="text"]::placeholder{ color: rgba(233,231,255,.4); }
+
+    .btnRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      font-family:inherit;
+      border-radius: 999px;
+      padding: 12px 14px;
+      font-weight: 800;
+      letter-spacing:.02em;
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
+      user-select:none;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+
+    .btnPrimary{
+      background: linear-gradient(135deg, var(--acid), #eaff9a);
+      color: rgba(7,7,11,.95);
+      box-shadow: 0 16px 42px rgba(199,255,74,.18);
+    }
+    .btnPrimary:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 20px 60px rgba(199,255,74,.28);
+    }
+
+    .btnGhost{
+      background: rgba(255,255,255,.07);
+      color: var(--ink);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .btnGhost:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 18px 52px rgba(0,0,0,.35);
+      background: rgba(255,255,255,.09);
+    }
+
+    .btnDanger{
+      background: linear-gradient(135deg, rgba(255,61,190,.95), rgba(255,61,190,.62));
+      color: #12000b;
+      box-shadow: 0 16px 42px rgba(255,61,190,.15);
+    }
+
+    .hint{
+      color: var(--dim);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .side{
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    .member{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .who{
+      display:flex; align-items:center; gap:10px;
+      min-width: 0;
+    }
+    .avatar{
+      width:34px;height:34px;border-radius:14px;
+      background:
+        radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.32), transparent 60%),
+        conic-gradient(from 180deg, var(--cyan), var(--hot), var(--acid), var(--cyan));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+      flex: 0 0 auto;
+    }
+    .name{
+      font-weight: 800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .meta{
+      font-size: 12px;
+      color: var(--dim);
+      margin-top: 2px;
+    }
+    .pill{
+      font-size:12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(233,231,255,.86);
+      white-space:nowrap;
+    }
+    .pill.on{
+      border-color: rgba(199,255,74,.35);
+      background: rgba(199,255,74,.12);
+      color: rgba(233,231,255,.92);
+    }
+
+    .tiny{
+      font-size:11px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color: rgba(233,231,255,.65);
+    }
+
+    .wave{
+      height: 88px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      position:relative;
+    }
+    .wave svg{
+      width:100%;
+      height:100%;
+      display:block;
+      opacity:.95;
+    }
+
+    /* reveal animation */
+    .reveal{
+      opacity:0;
+      transform: translateY(12px);
+      animation: rise .7s ease forwards;
+    }
+    @keyframes rise{
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    footer{
+      padding: 26px 0 40px;
+      color: rgba(233,231,255,.6);
+      font-size: 12px;
+    }
+    .footerRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 16px;
+    }
+    code.kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(233,231,255,.85);
+    }
+  </style>
+</head>
+
+<body>
+  <!--
+    KLARE DATEINAMEN (Empfehlung):
+    - HTML:  weewoocad-voice-server.html
+    - JS:    weewoocad-voice-server.js
+    (Wenn du es in einer Datei lassen willst: Script unten bleibt inline.)
+  -->
+
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>WeewooCAD <span style="opacity:.55;font-weight:600">/ Voice</span></h1>
+            <p>Lokale Demo (ohne echten Discord-Server) · WebRTC Echo + VC-Roster UI</p>
+          </div>
+        </div>
+
+        <div class="statusPill" aria-live="polite">
+          <div class="dot" id="statusDot"></div>
+          <div>
+            <strong id="statusTitle">Bereit</strong><br/>
+            <span id="statusSub">Kein Mikro aktiv</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <article class="panel reveal" style="animation-delay:.05s">
+        <div class="panelInner">
+          <div class="headline">
+            <h2>Sprachchat wie Discord – <span class="accent">als saubere Basis</span>.</h2>
+            <p>
+              Diese Demo macht zwei Dinge: (1) sie zeigt im Dropdown, wer im Voice-Channel ist,
+              und (2) sie erstellt einen <b>Echo-Kanal</b> (du hörst dich selbst – ideal zum Testen).
+              Für echte Mehrbenutzer-Channels brauchst du WebRTC + Signaling-Server (z.B. WebSocket) oder einen SFU wie mediasoup.
+            </p>
+          </div>
+
+          <div class="grid">
+            <section class="card reveal" style="animation-delay:.12s" aria-label="Voice Channel">
+              <div class="cardHeader">
+                <h3>Voice Channel</h3>
+                <div class="badge" id="channelBadge">ECHO</div>
+              </div>
+
+              <div class="cardBody">
+                <div class="row">
+                  <label for="displayName">Dein Name</label>
+                  <input id="displayName" type="text" placeholder="z.B. Luna / Max / WeewooPilot" maxlength="24" />
+                  <div class="hint">Tipp: Der Name taucht in der Mitgliederliste und im Dropdown auf.</div>
+                </div>
+
+                <div class="row2">
+                  <div class="row">
+                    <label for="channelSelect">Kanal</label>
+                    <select id="channelSelect" aria-label="Kanal auswählen">
+                      <option value="echo" selected>Echo-Kanal (Test)</option>
+                    </select>
+                    <div class="hint">Hier könntest du später mehrere Channels hinzufügen.</div>
+                  </div>
+
+                  <div class="row">
+                    <label for="memberSelect">Im VC</label>
+                    <select id="memberSelect" aria-label="Mitglieder im Voice Channel">
+                      <option>—</option>
+                    </select>
+                    <div class="hint">Dropdown zeigt live, wer im Channel ist.</div>
+                  </div>
+                </div>
+
+                <div class="btnRow">
+                  <button class="btnPrimary" id="joinBtn">Join VC</button>
+                  <button class="btnGhost" id="leaveBtn" disabled>Leave</button>
+                  <button class="btnGhost" id="pttBtn" disabled title="Push-to-Talk (halten)">
+                    Push-to-Talk
+                  </button>
+                  <button class="btnDanger" id="panicBtn" disabled title="Stoppt sofort alle Audio-Ausgaben">
+                    Stop Audio
+                  </button>
+                </div>
+
+                <div class="hint">
+                  Push-to-Talk: Halte <code class="kbd">Leertaste</code> oder den Button gedrückt.
+                </div>
+
+                <div class="wave" aria-hidden="true">
+                  <svg viewBox="0 0 900 140" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="g" x1="0" x2="1">
+                        <stop offset="0" stop-color="rgba(39,215,255,.95)"/>
+                        <stop offset=".55" stop-color="rgba(199,255,74,.95)"/>
+                        <stop offset="1" stop-color="rgba(255,61,190,.9)"/>
+                      </linearGradient>
+                      <filter id="blur">
+                        <feGaussianBlur stdDeviation="0.8" />
+                      </filter>
+                    </defs>
+                    <path id="wavePath" d="" fill="none" stroke="url(#g)" stroke-width="5" filter="url(#blur)" />
+                    <path id="wavePath2" d="" fill="none" stroke="rgba(233,231,255,.15)" stroke-width="2" />
+                  </svg>
+                </div>
+
+                <div class="hint" id="metrics">
+                  Input: — · Output: — · Gain: —
+                </div>
+              </div>
+            </section>
+
+            <aside class="card reveal" style="animation-delay:.18s" aria-label="Roster">
+              <div class="cardHeader">
+                <h3>Roster</h3>
+                <div class="pill on" id="rosterCount">0 online</div>
+              </div>
+
+              <div class="cardBody side">
+                <div class="tiny">Mitglieder im aktuellen Channel</div>
+                <div class="list" id="memberList" role="list" aria-label="Mitgliederliste"></div>
+                <div class="hint">
+                  In einer echten Discord-ähnlichen App kommt diese Liste vom Server (Presence/Channel-State).
+                  Hier ist es lokal (für Demo/UX).
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <footer class="wrap">
+      <div class="footerRow">
+        <div>© 2026 WeewooCAD Project · Voice UI Prototype</div>
+        <div>Empfohlene Dateien: <code class="kbd">weewoocad-voice-server.html</code> + <code class="kbd">weewoocad-voice-server.js</code></div>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    /**
+     * KLARE DATEINAMEN (nochmal):
+     * - HTML: weewoocad-voice-server.html
+     * - JS:   weewoocad-voice-server.js
+     *
+     * Dieses Script ist absichtlich "lokal-demo": Echo-Kanal läuft rein im Browser.
+     * Für "wie Discord" (mehrere User) brauchst du:
+     * - Signaling Server (WebSocket) + WebRTC PeerConnections oder
+     * - SFU (mediasoup/jitsi) + Auth + Channel-State + Permissions.
+     */
+
+    // ---------- Small utilities ----------
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const el = (tag, attrs={}) => Object.assign(document.createElement(tag), attrs);
+
+    // ---------- UI refs ----------
+    const statusDot = $("#statusDot");
+    const statusTitle = $("#statusTitle");
+    const statusSub = $("#statusSub");
+
+    const displayName = $("#displayName");
+    const channelSelect = $("#channelSelect");
+    const memberSelect = $("#memberSelect");
+    const memberList = $("#memberList");
+    const rosterCount = $("#rosterCount");
+
+    const joinBtn = $("#joinBtn");
+    const leaveBtn = $("#leaveBtn");
+    const pttBtn = $("#pttBtn");
+    const panicBtn = $("#panicBtn");
+
+    const wavePath = $("#wavePath");
+    const wavePath2 = $("#wavePath2");
+    const metrics = $("#metrics");
+
+    // ---------- State ----------
+    let joined = false;
+    let localUserId = null;
+
+    // In echt: kommt vom Server. Hier: lokal.
+    const channels = {
+      echo: {
+        id: "echo",
+        name: "Echo-Kanal (Test)",
+        members: [] // {id, name, speaking, joinedAt}
+      }
+    };
+    let activeChannelId = "echo";
+
+    // WebAudio + mic
+    let mediaStream = null;
+    let audioCtx = null;
+    let micSource = null;
+    let delayNode = null;
+    let feedbackGain = null;
+    let masterGain = null;
+    let analyser = null;
+    let rafId = null;
+
+    // "Push-to-talk" gates mic->echo
+    let pttDown = false;
+
+    // ---------- Roster rendering ----------
+    function sanitizeName(name){
+      const n = (name || "").trim();
+      if(!n) return "Gast-" + Math.floor(1000 + Math.random()*9000);
+      return n.slice(0, 24);
+    }
+
+    function getActiveChannel(){
+      return channels[activeChannelId];
+    }
+
+    function setStatus(mode, title, sub){
+      statusTitle.textContent = title;
+      statusSub.textContent = sub;
+
+      // color moods
+      if(mode === "ok"){
+        statusDot.style.background = "var(--acid)";
+        statusDot.style.boxShadow = "0 0 0 5px rgba(199,255,74,.12), 0 0 22px rgba(199,255,74,.45)";
+      }else if(mode === "warn"){
+        statusDot.style.background = "var(--amber)";
+        statusDot.style.boxShadow = "0 0 0 5px rgba(255,183,74,.12), 0 0 22px rgba(255,183,74,.35)";
+      }else if(mode === "bad"){
+        statusDot.style.background = "var(--hot)";
+        statusDot.style.boxShadow = "0 0 0 5px rgba(255,61,190,.12), 0 0 22px rgba(255,61,190,.35)";
+      }else{
+        statusDot.style.background = "rgba(233,231,255,.55)";
+        statusDot.style.boxShadow = "0 0 0 5px rgba(233,231,255,.08), 0 0 22px rgba(233,231,255,.12)";
+      }
+    }
+
+    function renderRoster(){
+      const ch = getActiveChannel();
+      const members = ch.members.slice().sort((a,b)=> a.joinedAt - b.joinedAt);
+
+      // list
+      memberList.innerHTML = "";
+      if(members.length === 0){
+        const empty = el("div", { className:"hint", textContent:"Noch niemand im VC. Join, um zu starten." });
+        memberList.appendChild(empty);
+      }else{
+        for(const m of members){
+          const row = el("div", { className:"member", role:"listitem" });
+
+          const left = el("div", { className:"who" });
+          const av = el("div", { className:"avatar", ariaHidden:"true" });
+
+          const text = el("div", { style:"min-width:0" });
+          const nm = el("div", { className:"name", textContent: m.name + (m.id === localUserId ? " (du)" : "") });
+          const mt = el("div", { className:"meta", textContent: m.speaking ? "spricht…" : "stumm" });
+          text.append(nm, mt);
+
+          left.append(av, text);
+
+          const right = el("div", { className:"pill " + (m.speaking ? "on" : ""), textContent: m.speaking ? "LIVE" : "idle" });
+
+          row.append(left, right);
+          memberList.appendChild(row);
+        }
+      }
+
+      // dropdown
+      memberSelect.innerHTML = "";
+      if(members.length === 0){
+        memberSelect.appendChild(el("option", { textContent:"—" }));
+      }else{
+        for(const m of members){
+          const opt = el("option", { value: m.id, textContent: m.name + (m.id === localUserId ? " (du)" : "") });
+          memberSelect.appendChild(opt);
+        }
+        // keep selection stable
+        if(localUserId && members.some(m => m.id === localUserId)){
+          memberSelect.value = localUserId;
+        }
+      }
+
+      rosterCount.textContent = `${members.length} online`;
+    }
+
+    function setSpeaking(isSpeaking){
+      const ch = getActiveChannel();
+      const me = ch.members.find(m => m.id === localUserId);
+      if(!me) return;
+      me.speaking = isSpeaking;
+      renderRoster();
+    }
+
+    // ---------- Echo channel (WebAudio) ----------
+    async function startEchoAudio(){
+      // get mic
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      micSource = audioCtx.createMediaStreamSource(mediaStream);
+
+      // "Echo" effect: small delay + feedback
+      delayNode = audioCtx.createDelay(1.0);
+      delayNode.delayTime.value = 0.18;
+
+      feedbackGain = audioCtx.createGain();
+      feedbackGain.gain.value = 0.18;
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.0; // gated by PTT
+      // analyser for waveform
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+
+      // Routing:
+      // mic -> masterGain -> delay -> destination
+      // delay -> feedbackGain -> delay (feedback loop)
+      // also tap analyser for visuals
+      micSource.connect(masterGain);
+      masterGain.connect(delayNode);
+      delayNode.connect(audioCtx.destination);
+
+      delayNode.connect(feedbackGain);
+      feedbackGain.connect(delayNode);
+
+      masterGain.connect(analyser);
+
+      // Visual loop
+      startWave();
+      updateMetrics();
+
+      setStatus("ok", "Im Echo-Kanal", "Push-to-Talk aktiviert (Leertaste halten)");
+    }
+
+    function stopEchoAudio(){
+      if(rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+
+      if(analyser) analyser.disconnect();
+      analyser = null;
+
+      if(masterGain) masterGain.disconnect();
+      if(feedbackGain) feedbackGain.disconnect();
+      if(delayNode) delayNode.disconnect();
+      if(micSource) micSource.disconnect();
+
+      masterGain = feedbackGain = delayNode = micSource = null;
+
+      if(mediaStream){
+        for(const t of mediaStream.getTracks()) t.stop();
+        mediaStream = null;
+      }
+      if(audioCtx){
+        audioCtx.close();
+        audioCtx = null;
+      }
+
+      // clear wave
+      wavePath.setAttribute("d", "");
+      wavePath2.setAttribute("d", "");
+      metrics.textContent = "Input: — · Output: — · Gain: —";
+    }
+
+    function panicStopAllAudio(){
+      // Hard stop the output quickly
+      try{
+        if(masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      }catch(e){}
+      stopEchoAudio();
+      setStatus("warn", "Audio gestoppt", "Du kannst erneut beitreten.");
+    }
+
+    function setGate(open){
+      if(!masterGain || !audioCtx) return;
+      const target = open ? 1.0 : 0.0;
+      masterGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.015);
+      setSpeaking(open);
+      updateMetrics();
+    }
+
+    function updateMetrics(){
+      const inTxt = mediaStream ? "Mic: on" : "Mic: off";
+      const outTxt = audioCtx ? "AudioCtx: on" : "AudioCtx: off";
+      const g = masterGain ? masterGain.gain.value.toFixed(2) : "—";
+      metrics.textContent = `Input: ${inTxt} · Output: ${outTxt} · Gain: ${g}`;
+    }
+
+    function startWave(){
+      if(!analyser) return;
+      const buf = new Uint8Array(analyser.fftSize);
+
+      const render = () => {
+        rafId = requestAnimationFrame(render);
+
+        analyser.getByteTimeDomainData(buf);
+        const w = 900, h = 140;
+        const mid = h/2;
+
+        // create two paths: main + faint
+        let d = `M 0 ${mid}`;
+        let d2 = `M 0 ${mid}`;
+        for(let x=0; x<w; x++){
+          const i = Math.floor((x / w) * buf.length);
+          const v = (buf[i] - 128) / 128; // -1..1
+          const y = mid + v * 42;
+          const y2 = mid + v * 18;
+          d += ` L ${x} ${y.toFixed(2)}`;
+          d2 += ` L ${x} ${y2.toFixed(2)}`;
+        }
+        wavePath.setAttribute("d", d);
+        wavePath2.setAttribute("d", d2);
+      };
+      render();
+    }
+
+    // ---------- Join/Leave (local roster) ----------
+    function joinVC(){
+      if(joined) return;
+
+      const name = sanitizeName(displayName.value);
+      displayName.value = name;
+
+      localUserId = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+      const ch = getActiveChannel();
+      ch.members.push({ id: localUserId, name, speaking:false, joinedAt: Date.now() });
+
+      joined = true;
+
+      joinBtn.disabled = true;
+      leaveBtn.disabled = false;
+      pttBtn.disabled = false;
+      panicBtn.disabled = false;
+
+      channelSelect.disabled = true;
+      displayName.disabled = true;
+
+      renderRoster();
+    }
+
+    function leaveVC(){
+      if(!joined) return;
+
+      const ch = getActiveChannel();
+      ch.members = ch.members.filter(m => m.id !== localUserId);
+
+      joined = false;
+      localUserId = null;
+
+      joinBtn.disabled = false;
+      leaveBtn.disabled = true;
+      pttBtn.disabled = true;
+      panicBtn.disabled = true;
+
+      channelSelect.disabled = false;
+      displayName.disabled = false;
+
+      setStatus("neutral", "Bereit", "Kein Mikro aktiv");
+
+      renderRoster();
+    }
+
+    // ---------- PTT controls ----------
+    function pttStart(){
+      if(!joined || !audioCtx || !masterGain) return;
+      pttDown = true;
+      pttBtn.classList.add("btnPrimary");
+      pttBtn.classList.remove("btnGhost");
+      pttBtn.textContent = "Sprechen… (PTT)";
+      setGate(true);
+    }
+    function pttEnd(){
+      if(!joined || !audioCtx || !masterGain) return;
+      pttDown = false;
+      pttBtn.classList.remove("btnPrimary");
+      pttBtn.classList.add("btnGhost");
+      pttBtn.textContent = "Push-to-Talk";
+      setGate(false);
+    }
+
+    // ---------- Events ----------
+    joinBtn.addEventListener("click", async () => {
+      try{
+        joinVC();
+        // Start echo audio when joining echo channel
+        await startEchoAudio();
+      }catch(err){
+        console.error(err);
+        setStatus("bad", "Mikro verweigert", "Browser-Zugriff auf Mikrofon erlauben.");
+        // roll back join
+        leaveVC();
+      }
+    });
+
+    leaveBtn.addEventListener("click", () => {
+      // Stop audio + leave roster
+      stopEchoAudio();
+      leaveVC();
+    });
+
+    panicBtn.addEventListener("click", () => {
+      panicStopAllAudio();
+      // keep user in roster but not speaking
+      if(joined) setSpeaking(false);
+    });
+
+    // Button-based PTT (press & hold)
+    pttBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if(!joined) return;
+      // resume context if needed (iOS/Safari)
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      pttStart();
+      pttBtn.setPointerCapture?.(e.pointerId);
+    });
+    pttBtn.addEventListener("pointerup", () => pttEnd());
+    pttBtn.addEventListener("pointercancel", () => pttEnd());
+    pttBtn.addEventListener("pointerleave", () => { if(pttDown) pttEnd(); });
+
+    // Spacebar PTT
+    window.addEventListener("keydown", (e) => {
+      if(e.code !== "Space") return;
+      if(e.repeat) return;
+      if(!joined) return;
+      // don't steal when typing in input
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if(tag === "input" || tag === "textarea" || tag === "select") return;
+
+      e.preventDefault();
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      pttStart();
+    });
+    window.addEventListener("keyup", (e) => {
+      if(e.code !== "Space") return;
+      if(!joined) return;
+      e.preventDefault();
+      pttEnd();
+    });
+
+    // Initial render
+    (function init(){
+      // default name suggestion
+      displayName.value = "Gast-" + Math.floor(1000 + Math.random()*9000);
+      renderRoster();
+
+      // Stagger reveal already via CSS animation; also set initial status
+      setStatus("neutral", "Bereit", "Kein Mikro aktiv");
+    })();
+  </script>
+</body>
+</html>

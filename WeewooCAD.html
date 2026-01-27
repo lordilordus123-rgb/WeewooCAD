@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>WeewooCAD - Server</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="Frontend/style.css">
+  <link rel="stylesheet" href="Frontend/login-style.css">
 </head>
 <body>
 
@@ -25,24 +25,11 @@
       <text>Ich mag WeewooCAD</text>
     </div>
 
-    <!-- Input Section -->
-    <section class="card">
-      <h2>Login</h2>
-      <div class="input-group">
-        <input id="myInput" name="username" type="text" placeholder="Benutzername" class="input">
-        <input id="emailInput" name="email" type="email" placeholder="E‑Mail" class="input">
-        <button id="myButton" class="btn">Login</button>
-      </div>
-      <p id="msg" class="message"></p>
-    </section>
+    <input id="text-input" placeholder="Gib hier deinen Text ein..."></input>
+    <button id="speak-btn">Vorlesen</button>
 
-<!-- Button 
-    <div class="button">
-      <button class="btn">Login</button>
-    </div>-->
+    <script src="Backend/tts.js"></script>
 
-</main>
-  <!-- Footer -->
   <footer class="footer">
     <p>&copy; 2026 WeewooCAD Project · Built with ❤️</p>
   </footer>
